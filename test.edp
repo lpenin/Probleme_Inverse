@@ -1,0 +1,102 @@
+
+// // Trace de l'éxécution dans un fichier
+// ofstream cout("output/laplace_trace_umfpack.txt");
+// // Fichier de sortie sous forme de tableau pour tracé gnuplot
+// ofstream cout("output/laplace_errors_umfpack.txt");
+//
+// ofstream hfile("output/laplace_errors_umfpack_H1.txt");
+// ofstream maxfile("output/laplace_errors_umfpack_max.txt");
+#include "spline.h"
+
+cout << "Probleme du four" << endl;
+
+cout << "# Resolution de d_t(u)-Laplacien(u) = g avec u_w = 0, u_e = g(y), du_{n,s}(N)/dN = 0" << endl;
+cout << "# sur le carre [0,1]x[0,1] en elements finis P1 Lagrange" << endl;
+
+//cout << "# pas h, erreur L^2 relative, erreur relative L^2 sur le gradient, temps CPU" << endl;
+
+// Définition des bord du domaine de calcul
+border Gamma1(t=0,1) {x=0   ; y=1-t; };
+border Gamma2(t=0,1) {x=t   ; y=0;   };
+border Gamma3(t=0,1) {x=1   ; y=t;   };
+border Gamma4(t=0,1) {x=1-t ; y=1;   };
+
+int   n = 50;  // Nombre de points par côté
+int   M = 5;
+std::vector<double> X(M), Y(M);
+
+Y[0]=0.; Y[1]=0.;
+for (int k=0; k<M+2; k++)
+{
+  X[k]=k/M;
+}
+real t1 = clock(); // Pour mesure du temps cpu
+
+// Construction du maillage
+mesh Th = buildmesh(Gamma1(n)+Gamma2(n)+Gamma3(n)+Gamma4(n));
+
+cout << "  Nombre de sommets par cote : " << n << endl;
+cout << "  Nombre de sommets dans le maillage : " << Th.nv << endl;
+cout << "  Nombre de triangles dans le maillage : " << Th.nt << endl;
+
+// Affichage et sortie fichierdu maillage seul
+//plot(Gamma1(n)+Gamma2(n)+Gamma3(n)+Gamma4(n));
+//plot(Th, wait=1, ps="laplace.eps");
+
+// Définition de l'espace de discrétisation. Ici on discrétise
+// V=H^1_0(\Omega) avec des éléments finis P1-Lagrange
+fespace Vh(Th,P1);
+cout << "  Nombre de degres de liberte : " << Vh.ndof << endl;
+
+
+// Définition de la formulation variationnelle dans Vh
+// On a besoin de 2 fonctions u et v dans Vh
+
+Vh u, v, uold;
+real dt = 0.01;
+real t=0;
+u=0;
+uold=u;
+
+// D'une fonction definie de manière analytique (pour le second membre)
+func g = y*(1-y);
+
+// Prise dans un premier temps arbitrairement comme une parabole sur le bord Est selon y
+
+// Voici finalement notre problème, avec son solveur linéaire
+
+problem chaleur(u,v,solver=CG, eps=1.0e-6) = int2d(Th)( u*v/dt ) + int2d(Th)( dx(u)*dx(v) + dy(u)*dy(v) ) - int2d(Th)( uold*v/dt )
+   + on(Gamma1, u=0) + on(Gamma3, u=g); //u(x, y) = x + y
+
+// Résolution du système linéaire
+while((t<1))
+{
+ chaleur;
+ t=t+dt;
+ uold=u;
+ plot(u,cmm="u  t="+t,u,fill=1, value=true);
+}
+
+U_th[i]=u();
+
+g=0.;
+chaleur;
+beta=1.;
+
+while(norm>10^(-2.))
+{
+  norm=0.
+  for (int i=0; i<M; i++)
+  {
+    norm= norm + abs(U_th[i]-U_exp[i])/2.;
+    Y[i+2]=U_th[i];
+  }
+  tk::spline s;
+  s.setpoint(X,Y);
+  g=s;
+  chaleur;
+}
+
+
+// Visualisation de la solution
+//plot(u, fill=true,value=true,boundary=true,wait=true);
