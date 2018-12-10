@@ -25,7 +25,7 @@ std::vector<double> prodMatVec (std::vector<std::vector<double>> Aloc, std::vect
   std::vector<double> cloc(ny);
   for (int i=0; i<ny; i++)
   {
-    cloc[i]=dot(Aloc[i:(i+1)*nx],bloc);
+    cloc[i]=dot(Aloc[i],bloc);
   }
   return cloc;
 }
