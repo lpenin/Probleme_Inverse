@@ -1,19 +1,11 @@
-# Compilateur utilisé
-CC=g++
-CC_para=mpic++
+DEBUG_FLAG = -g3 -DDEBUG -std=c++11
+OPTIM_FLAG = -O3 -w -DNDEBUG -std=c++11
 
 
-run : Chaleur.cc fonction.cpp fonction.h
-	$(CC_para) -O3 -std=c++11  Chaleur.cc fonction.cpp -o run
-
-#si on a des trucs a tester :
-test : test.cc
-	$(CC) test.cc  $(CXX_FLAGS) -o run_test
+run : Chaleur.cc fonction.cpp fonction.h spline.h
+#g++ $(DEBUG_FLAG)  Chaleur.cc fonction.cpp -o run
+	g++ $(OPTIM_FLAG)  Chaleur.cc fonction.cpp -o run
 
 
-
-
-# Supprime l'exécutable, les fichiers binaires (.o) et les fichiers
-# temporaires de sauvegarde (~)
 clean :
 	rm -f *.o *~ run

@@ -6,13 +6,13 @@ double dot(std::vector<double> uloc, std::vector<double> vloc)
 
 
   int Np = uloc.size();
-  double y,yloc;
+  double y,cloc;
 
   //Calcul d'une partie de y
-  yloc = 0;
+  cloc = 0;
   for (int i=0; i<Np; i++)
   {
-    yloc += uloc[i]*vloc[i];
+    cloc += uloc[i]*vloc[i];
   }
 
   return y;
@@ -27,6 +27,31 @@ std::vector<double> prodMatVec (std::vector<std::vector<double>> Aloc, std::vect
   {
     cloc[i]=dot(Aloc[i],bloc);
   }
+  return cloc;
+}
+
+
+std::vector<double> prodM5V (std::vector<std::vector<double>> A, std::vector<double> bloc, int nx, int ny)
+{
+  int np= nx*ny;
+  std::vector<double> cloc(np);
+
+  cloc[0] = A[2][0]*bloc[0] + A[3][0]*bloc[1] + A[4][0]*bloc[nx];
+  cloc[np-1] = A[2][np-1]*bloc[np-1] + A[3][np-1]*bloc[np-1] + A[4][np-1]*bloc[nx];
+
+  for (int i= 1; i<nx; i++)
+  {
+    cloc[i] = A[1][i]*bloc[i-1] + A[2][i]*bloc[i] + A[3][i]*bloc[i+1] + A[4][i]*bloc[i+nx];
+  }
+  for (int i= nx; i<np-nx; i++)
+  {
+    cloc[i] = A[0][i]*bloc[i-nx] + A[1][i]*bloc[i-1] + A[2][i]*bloc[i] + A[3][i]*bloc[i+1] + A[4][i]*bloc[i+nx];
+  }
+  for (int i= np-nx; i<np-1; i++)
+  {
+    cloc[i] = A[0][i]*bloc[i-nx] + A[1][i]*bloc[i-1] + A[2][i]*bloc[i] + A[3][i]*bloc[i+1];
+  }
+
   return cloc;
 }
 
@@ -47,8 +72,9 @@ std::vector<double> CG (std::vector<std::vector<double> > Aloc, std::vector<doub
 
   xloc = x0loc;
 
+
   // wloc = prodMVC(Aloc,xloc,nx,ny);
-  wloc = prodMatVec(Aloc,xloc);
+  wloc = prodM5V(Aloc, xloc, nx, ny);
 
   for (int i = 0; i < Np; i++)
   {
@@ -65,7 +91,7 @@ std::vector<double> CG (std::vector<std::vector<double> > Aloc, std::vector<doub
   while ((norm_r > err) and (k<kmax))
     {
       // dloc = prodMVC(Aloc,ploc,nx,ny);
-      dloc = prodMatVec(Aloc,ploc);
+      dloc = prodM5V(Aloc, ploc, nx, ny);
 
       double alpha = nr_carre/dot(ploc,dloc);
 
